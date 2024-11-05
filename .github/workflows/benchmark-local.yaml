@@ -1,0 +1,123 @@
+# cli command to run this from repo
+# given a run, get output (link?)
+# input variable to CLI to allow users to specify where to output their artefacts
+
+name: Run performance comparisons
+
+on:
+  workflow_dispatch:
+    inputs:
+      c1:
+        description: First commit hash
+        required: true
+
+jobs:
+  build:
+    runs-on: buildjet-8vcpu-ubuntu-2204
+    strategy:
+      fail-fast: true
+      matrix:
+        commit:
+        - ${{ github.event.inputs.c1 }}
+    timeout-minutes: 15 # Remove for ssh debugging
+    permissions:
+      id-token: write
+      contents: read
+    outputs:
+      wheel: ${{ steps.upload_to_s3.outputs.wheel }}
+    steps:
+    - name: Assume AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-region: us-west-2
+        role-to-assume: ${{ secrets.ACTIONS_AWS_ROLE_ARN }}
+        role-session-name: daft-performance-comparisons-build
+    - name: Checkout commit ${{ matrix.commit }}
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ matrix.commit }}
+    - name: Install dependencies
+      run: |
+        # install rust
+        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+        source $HOME/.cargo/env
+        echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+        # install uv
+        curl -LsSf https://astral.sh/uv/install.sh | sh
+        echo "$HOME/.local/bin" >> $GITHUB_PATH
+        # install python
+        uv python install 3.9
+        uv python pin 3.9
+        # other
+        sudo apt-get update
+        sudo apt-get install gcc g++ pkg-config libssl-dev make -y
+    - name: Cache dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/target/debug
+        key: ${{ runner.os }}-cargo-deps-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-cargo-deps-
+    - name: Build wheel for commit ${{ matrix.commit }}
+      run: |
+        export CARGO_TARGET_DIR=~/target
+        uv v
+        source .venv/bin/activate
+        uv pip install pip
+        uv pip install maturin
+        maturin build
+    - name: Upload files to s3
+      id: upload_to_s3
+      run: |
+        # There should only be one output wheel in this directory
+        for file in ~/target/wheels/*.whl; do
+          aws s3 cp $file s3://github-actions-artifacts-bucket/builds/${{ github.sha }}/${{ matrix.commit }}/ --acl public-read --no-progress;
+          file_basename=$(basename $file)
+          echo "wheel=$file_basename" >> "$GITHUB_OUTPUT"
+        done
+
+  run:
+    needs: build
+    runs-on: [self-hosted, linux, x64, ci-dev]
+    strategy:
+      fail-fast: true
+      matrix:
+        commit:
+        - ${{ github.event.inputs.c1 }}
+    timeout-minutes: 15 # Remove for ssh debugging
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+    - name: Checkout commit ${{ matrix.commit }}
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ matrix.commit }}
+    - name: Assume AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-region: us-west-2
+    - uses: ./.github/actions/install
+    - name: Modify ray.yaml to contain runtime variables
+      run: |
+        echo '${{ needs.build.outputs.wheel }}'
+        sed -i 's|<<SHA>>|${{ github.sha }}|g' .github/assets/ray.yaml
+        sed -i 's|<<COMMIT>>|${{ matrix.commit }}|g' .github/assets/ray.yaml
+        sed -i 's|<<WHEEL>>|${{ needs.build.outputs.wheel }}|g' .github/assets/ray.yaml
+
+    - name: Write ssh-key to file
+      run: |
+        KEY=$(aws secretsmanager get-secret-value --secret-id ci-github-actions-ray-cluster-key-3 --query SecretString --output text)
+        echo "$KEY" >> ~/.ssh/ci-github-actions-ray-cluster-key.pem
+        chmod 600 ~/.ssh/ci-github-actions-ray-cluster-key.pem
+
+    - name: Spin up ray cluster
+      run: |
+        uv v
+        source .venv/bin/activate
+        uv pip install ray[default] boto3
+        ray up .github/assets/ray.yaml -y
+        HEAD_NODE_IP=$(ray get-head-ip .github/assets/ray.yaml | tail -n 1)
+        ssh -o StrictHostKeyChecking=no -fN -L 8265:localhost:8265 -i ~/.ssh/ci-github-actions-ray-cluster-key.pem ubuntu@$HEAD_NODE_IP
+        ray job submit --working-dir .github/working_dir --address http://localhost:8265 -- python test.py
+        ray down .github/assets/ray.yaml -y
