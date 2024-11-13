@@ -139,6 +139,8 @@ impl SparkConnectService for DaftSparkConnectService {
 
         let session = self.get_session(&request.session_id)?;
 
+        info!("Executing plan: {request:#?}");
+
         let Some(operation) = request.operation_id else {
             return invalid_argument_err!("Operation ID is required");
         };

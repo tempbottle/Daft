@@ -1909,6 +1909,7 @@ version = "0.3.0-dev0"
 dependencies = [
  "arrow2",
  "daft-core",
+ "daft-logical-plan",
  "daft-schema",
  "daft-table",
  "dashmap",

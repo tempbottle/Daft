@@ -25,10 +25,8 @@
 //!
 //! This allows Spark to optimize and execute queries efficiently across a cluster
 //! while providing a consistent API regardless of the underlying data source.
-//! ```mermaid
-//!
-//! ```
 
+use daft_logical_plan::LogicalPlanBuilder;
 use eyre::{eyre, Context};
 use futures::Stream;
 use spark_connect::{relation::RelType, ExecutePlanResponse, Relation};
@@ -39,12 +37,12 @@ use crate::convert::formatting::RelTypeExt;
 mod range;
 use range::range;
 
+mod limit;
+use limit::limit;
+
 use crate::command::PlanIds;
 
-pub fn convert_data(
-    plan: Relation,
-    context: &PlanIds,
-) -> eyre::Result<impl Stream<Item = eyre::Result<ExecutePlanResponse>> + Unpin> {
+pub fn convert_data(plan: Relation, context: &PlanIds) -> eyre::Result<LogicalPlanBuilder> {
     // First check common fields if needed
     if let Some(common) = &plan.common {
         // contains metadata shared across all relation types
@@ -56,6 +54,7 @@ pub fn convert_data(
 
     match rel_type {
         RelType::Range(input) => range(input, context).wrap_err("parsing Range"),
+        RelType::Limit(input) => limit(*input, context).wrap_err("parsing Limit"),
         other => Err(eyre!("Unsupported top-level relation: {}", other.name())),
     }
 }
