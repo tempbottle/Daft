@@ -21,7 +21,7 @@ def spark_session():
     yield session
 
     # Cleanup
-    # server.shutdown()
+    server.shutdown()
     session.stop()
     time.sleep(2)  # Allow time for session cleanup
 
@@ -34,7 +34,7 @@ def test_range_operation(spark_session, tmpdir):
 
     # Write to a temporary parquet file using tmpdir
     # temp_path = str(tmpdir / "test_parquet_output.parquet")
-    temp_path = "/Users/andrewgazelka/Projects/Daft/lol.parquet"
+    temp_path = "/Users/andrewgazelka/Projects/Daft/lol"
     df.write.parquet(temp_path)
 
     # # Read back the written file
