@@ -7,11 +7,11 @@ use eyre::{ensure, Context};
 use futures::{stream, Stream};
 use spark_connect::{ExecutePlanResponse, Range};
 
-use crate::command::PlanIds;
+use crate::op::execute::PlanIds;
 
 pub fn range(
     range: Range,
-    channel: &PlanIds,
+    context: &PlanIds,
 ) -> eyre::Result<impl Stream<Item = eyre::Result<ExecutePlanResponse>> + Unpin> {
     let Range {
         start,
@@ -42,7 +42,7 @@ pub fn range(
         len,
     )?;
 
-    let response = channel.gen_response(&singleton_table)?;
+    let response = context.gen_response(&singleton_table)?;
 
     Ok(stream::once(ready(Ok(response))))
 }
