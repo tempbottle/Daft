@@ -1915,6 +1915,7 @@ dependencies = [
  "daft-local-execution",
  "daft-local-plan",
  "daft-logical-plan",
+ "daft-micropartition",
  "daft-scan",
  "daft-schema",
  "daft-table",

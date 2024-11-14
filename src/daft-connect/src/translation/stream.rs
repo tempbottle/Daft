@@ -64,7 +64,8 @@ pub fn relation_to_stream(relation: Relation, context: PlanIds) -> eyre::Result<
             Ok(Box::pin(stream))
         }
         RelType::Read(read) => {
-            let logical_plan = translation::logical_plan::read(read)?.build();
+            let builder = translation::logical_plan::read(read)?;
+            let logical_plan = builder.logical_plan.build();
 
             let (tx, rx) =
                 tokio::sync::mpsc::unbounded_channel::<eyre::Result<ExecutePlanResponse>>();
@@ -78,11 +79,14 @@ pub fn relation_to_stream(relation: Relation, context: PlanIds) -> eyre::Result<
                     }
                 };
 
-                let psets = HashMap::new();
                 let cfg = DaftExecutionConfig::default();
-                let result =
-                    daft_local_execution::run_local(&physical_plan, psets, cfg.into(), None)
-                        .unwrap();
+                let result = daft_local_execution::run_local(
+                    &physical_plan,
+                    builder.partition,
+                    cfg.into(),
+                    None,
+                )
+                .unwrap();
 
                 for result in result {
                     let result = match result {

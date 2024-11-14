@@ -111,7 +111,7 @@ impl Session {
             SaveMode::Ignore => {}
         }
 
-        let builder = match crate::translation::to_logical_plan(input) {
+        let plan_builder = match crate::translation::to_logical_plan(input) {
             Ok(plan) => plan,
             Err(e) => {
                 error!("Failed to build logical plan: {e:?}");
@@ -120,7 +120,8 @@ impl Session {
         };
 
         println!("writing to path: {path}");
-        let builder = builder
+        let builder = plan_builder
+            .logical_plan
             .table_write(&path, FileFormat::Parquet, None, None, None)
             .unwrap();
 
@@ -134,10 +135,9 @@ impl Session {
 
         println!("physical plan: {physical_plan:#?}");
 
-        let partition_sets = HashMap::new();
         let cfg = DaftExecutionConfig::default();
         let results =
-            daft_local_execution::run_local(&physical_plan, partition_sets, cfg.into(), None)
+            daft_local_execution::run_local(&physical_plan, plan_builder.partition, cfg.into(), None)
                 .unwrap();
 
         // todo: remove

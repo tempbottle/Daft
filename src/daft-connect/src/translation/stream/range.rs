@@ -21,7 +21,6 @@ pub fn range(
     } = range;
 
     let start = start.unwrap_or(0);
-
     ensure!(num_partitions.is_none(), "num_partitions is not supported");
 
     let step = usize::try_from(step).wrap_err("step must be a positive integer")?;

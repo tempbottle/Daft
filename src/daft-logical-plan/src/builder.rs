@@ -137,6 +137,25 @@ impl LogicalPlanBuilder {
         Ok(Self::new(logical_plan.into(), None))
     }
 
+    pub fn in_memory_scan_not_python(
+        partition_key: &str,
+        schema: Arc<Schema>,
+        num_partitions: usize,
+        size_bytes: usize,
+        num_rows: usize,
+    ) -> Self {
+        let source_info = SourceInfo::InMemory(InMemoryInfo::new_not_python(
+            schema.clone(),
+            partition_key.into(),
+            num_partitions,
+            size_bytes,
+            num_rows,
+            None,
+        ));
+        let logical_plan: LogicalPlan = ops::Source::new(schema, source_info.into()).into();
+        Self::new(logical_plan.into(), None)
+    }
+
     pub fn table_scan(
         scan_operator: ScanOperatorRef,
         pushdowns: Option<Pushdowns>,

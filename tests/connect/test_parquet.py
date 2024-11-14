@@ -28,9 +28,10 @@ def spark_session():
 
 def test_range_operation(spark_session, tmpdir):
     # Read the parquet file
-    df = spark_session.read.parquet(
-        "/Users/andrewgazelka/Projects/Daft/docs/source/user_guide/fotw/data/sample_taxi.parquet"
-    )
+    # df = spark_session.read.parquet(
+    #     "/Users/andrewgazelka/Projects/Daft/docs/source/user_guide/fotw/data/sample_taxi.parquet"
+    # )
+    df = spark_session.range(10)
 
     # Write to a temporary parquet file using tmpdir
     # temp_path = str(tmpdir / "test_parquet_output.parquet")
