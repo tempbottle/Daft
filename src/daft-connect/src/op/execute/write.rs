@@ -136,9 +136,13 @@ impl Session {
         println!("physical plan: {physical_plan:#?}");
 
         let cfg = DaftExecutionConfig::default();
-        let results =
-            daft_local_execution::run_local(&physical_plan, plan_builder.partition, cfg.into(), None)
-                .unwrap();
+        let results = daft_local_execution::run_local(
+            &physical_plan,
+            plan_builder.partition,
+            cfg.into(),
+            None,
+        )
+        .unwrap();
 
         // todo: remove
         std::thread::scope(|s| {

@@ -1,13 +1,14 @@
 use std::future::ready;
 
+use common_daft_config::DaftExecutionConfig;
 use futures::stream;
-use spark_connect::Relation;
-use tonic::Status;
+use spark_connect::{ExecutePlanResponse, Relation};
+use tonic::{codegen::tokio_stream::wrappers::UnboundedReceiverStream, Status};
 
 use crate::{
     op::execute::{ExecuteStream, PlanIds},
     session::Session,
-    translation::relation_to_stream,
+    translation,
 };
 
 impl Session {
@@ -21,13 +22,81 @@ impl Session {
         let context = PlanIds {
             session: self.client_side_session_id().to_string(),
             server_side_session: self.server_side_session_id().to_string(),
-            operation: operation_id.clone(),
+            operation: operation_id,
         };
 
         let finished = context.finished();
 
-        let stream = relation_to_stream(command, context)
-            .map_err(|e| Status::internal(e.to_string()))?
+        let (tx, rx) = tokio::sync::mpsc::unbounded_channel::<eyre::Result<ExecutePlanResponse>>();
+
+        std::thread::spawn(move || {
+            let plan = match translation::to_logical_plan(command) {
+                Ok(plan) => plan,
+                Err(e) => {
+                    tx.send(Err(eyre::eyre!(e))).unwrap();
+                    return;
+                }
+            };
+
+            let logical_plan = plan.logical_plan.build();
+            let physical_plan = match daft_local_plan::translate(&logical_plan) {
+                Ok(plan) => plan,
+                Err(e) => {
+                    tx.send(Err(eyre::eyre!(e))).unwrap();
+                    return;
+                }
+            };
+
+            let cfg = DaftExecutionConfig::default();
+            let result = match daft_local_execution::run_local(
+                &physical_plan,
+                plan.partition,
+                cfg.into(),
+                None,
+            ) {
+                Ok(result) => result,
+                Err(e) => {
+                    tx.send(Err(eyre::eyre!(e))).unwrap();
+                    return;
+                }
+            };
+
+            for result in result {
+                let result = match result {
+                    Ok(result) => result,
+                    Err(e) => {
+                        tx.send(Err(eyre::eyre!(e))).unwrap();
+                        return;
+                    }
+                };
+
+                let tables = match result.get_tables() {
+                    Ok(tables) => tables,
+                    Err(e) => {
+                        tx.send(Err(eyre::eyre!(e))).unwrap();
+                        return;
+                    }
+                };
+
+                for table in tables.as_slice() {
+                    let response = context.gen_response(table);
+
+                    let response = match response {
+                        Ok(response) => response,
+                        Err(e) => {
+                            tx.send(Err(eyre::eyre!(e))).unwrap();
+                            return;
+                        }
+                    };
+
+                    tx.send(Ok(response)).unwrap();
+                }
+            }
+        });
+
+        let stream = UnboundedReceiverStream::new(rx);
+
+        let stream = stream
             .map_err(|e| Status::internal(e.to_string()))
             .chain(stream::once(ready(Ok(finished))));
 

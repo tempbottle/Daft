@@ -144,6 +144,7 @@ impl LogicalPlanBuilder {
         size_bytes: usize,
         num_rows: usize,
     ) -> Self {
+        use crate::InMemoryInfo;
         let source_info = SourceInfo::InMemory(InMemoryInfo::new_not_python(
             schema.clone(),
             partition_key.into(),
