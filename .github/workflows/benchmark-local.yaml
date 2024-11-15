@@ -94,13 +94,11 @@ jobs:
         sed -i 's|<<SHA>>|${{ github.sha }}|g' .github/assets/ray.yaml
         sed -i 's|<<COMMIT>>|${{ matrix.commit }}|g' .github/assets/ray.yaml
         sed -i 's|<<WHEEL>>|${{ needs.build.outputs.wheel }}|g' .github/assets/ray.yaml
-
     - name: Write ssh-key to file
       run: |
         KEY=$(aws secretsmanager get-secret-value --secret-id ci-github-actions-ray-cluster-key-3 --query SecretString --output text)
         echo "$KEY" >> ~/.ssh/ci-github-actions-ray-cluster-key.pem
         chmod 600 ~/.ssh/ci-github-actions-ray-cluster-key.pem
-
     - name: Spin up ray cluster
       run: |
         uv v
