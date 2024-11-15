@@ -34,12 +34,7 @@ available_node_types:
         Name: ray-autoscaler-v1
 
 setup_commands:
-  # Mount drive
-  # - sudo mkfs.ext4 /dev/nvme1n1
-  # - sudo mount -t ext4 /dev/nvme1n1 /tmp
-  # - sudo chmod 777 /tmp
-
-  # Install dependencies
+# Install dependencies
 - curl -LsSf https://astral.sh/uv/install.sh | sh
 - echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
 - source ~/.bashrc
