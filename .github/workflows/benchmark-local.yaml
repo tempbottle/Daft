@@ -36,19 +36,9 @@ jobs:
       uses: actions/checkout@v4
       with:
         ref: ${{ matrix.commit }}
+    - uses: ./.github/actions/install
     - name: Install dependencies
       run: |
-        # install rust
-        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-        source $HOME/.cargo/env
-        echo "$HOME/.cargo/bin" >> $GITHUB_PATH
-        # install uv
-        curl -LsSf https://astral.sh/uv/install.sh | sh
-        echo "$HOME/.local/bin" >> $GITHUB_PATH
-        # install python
-        uv python install 3.9
-        uv python pin 3.9
-        # other
         sudo apt-get update
         sudo apt-get install gcc g++ pkg-config libssl-dev make -y
     - name: Cache dependencies
