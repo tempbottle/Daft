@@ -37,7 +37,7 @@ jobs:
       with:
         ref: ${{ matrix.commit }}
     - uses: ./.github/actions/install
-    - name: Install dependencies
+    - name: Install additional dependencies
       run: |
         sudo apt-get update
         sudo apt-get install gcc g++ pkg-config libssl-dev make -y
@@ -90,7 +90,6 @@ jobs:
     - uses: ./.github/actions/install
     - name: Modify ray.yaml to contain runtime variables
       run: |
-        echo '${{ needs.build.outputs.wheel }}'
         sed -i 's|<<SHA>>|${{ github.sha }}|g' .github/assets/ray.yaml
         sed -i 's|<<COMMIT>>|${{ matrix.commit }}|g' .github/assets/ray.yaml
         sed -i 's|<<WHEEL>>|${{ needs.build.outputs.wheel }}|g' .github/assets/ray.yaml
