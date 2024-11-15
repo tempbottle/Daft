@@ -7,15 +7,22 @@ runs:
     shell: bash
     run: |
       curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-      source $HOME/.cargo/env
-      echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+      CARGO_BIN="$HOME/.cargo/bin"
+      echo 'export PATH="$CARGO_BIN:$PATH"' >> $HOME/.bashrc
+      echo "$CARGO_BIN" >> $GITHUB_PATH
 
   - name: Install uv
     shell: bash
     run: |
       curl -LsSf https://astral.sh/uv/install.sh | sh
-      source $HOME/.local/bin/env
-      echo "$HOME/.local/bin" >> $GITHUB_PATH
+      UV_BIN="$HOME/.local/bin"
+      echo 'export PATH="$UV_BIN:$PATH"' >> $HOME/.bashrc
+      echo "$UV_BIN" >> $GITHUB_PATH
+
+  - name: Source .bashrc
+    shell: bash
+    run: |
+      source $HOME/.bashrc
 
   - name: Install python (version 3.9)
     shell: bash
