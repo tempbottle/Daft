@@ -15,7 +15,6 @@ jobs:
   build:
     uses: ./.github/workflows/build-commit.yaml
     with:
-      aws_role_arn: ${{ secrets.ACTIONS_AWS_ROLE_ARN }}
       commit: ${{ github.event.inputs.c1 }}
 
     # runs-on: buildjet-8vcpu-ubuntu-2204
