@@ -1,7 +1,6 @@
 name: Run performance comparisons
 
 on:
-  pull_request:
   workflow_dispatch:
     inputs:
       c1:
