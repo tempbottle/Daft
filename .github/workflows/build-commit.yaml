@@ -14,6 +14,7 @@ on:
     outputs:
       wheel:
         description: The wheel file that was built
+        value: ${{ steps.upload_to_s3.outputs.wheel }}
 
 jobs:
   build-commit:
