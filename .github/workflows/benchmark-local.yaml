@@ -26,19 +26,14 @@ jobs:
     outputs:
       wheel: ${{ steps.build-commit.outputs.wheel }}
     steps:
-    - id: build-commit
-      uses: ./.github/workflows/build-commit.yaml
+    - uses: actions/checkout@v4
       with:
-        aws_role_arn: ${{ secrets.ACTIONS_AWS_ROLE_ARN }}
+        ref: ${{ matrix.commit }}
+    - uses: ./.github/workflows/build-commit.yaml
+      id: build-commit
+      with:
         commit: ${{ matrix.commit }}
-    # - name: Checkout commit ${{ matrix.commit }}
-    #   uses: actions/checkout@v4
-    #   with:
-    #     ref: ${{ matrix.commit }}
-    # - uses: ./.github/actions/build-commit
-    #   with:
-    #     aws_role_arn: ${{ secrets.ACTIONS_AWS_ROLE_ARN }}
-    #     commit: ${{ matrix.commit }}
+        aws_role_arn: ${{ secrets.ACTIONS_AWS_ROLE_ARN }}
 
   run:
     needs: build
