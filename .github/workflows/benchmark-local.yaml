@@ -19,27 +19,6 @@ jobs:
     secrets:
       aws_role_arn: ${{ secrets.ACTIONS_AWS_ROLE_ARN }}
 
-    # runs-on: buildjet-8vcpu-ubuntu-2204
-    # strategy:
-    #   fail-fast: true
-    #   matrix:
-    #     commit:
-    #     - ${{ github.event.inputs.c1 }}
-    # timeout-minutes: 15 # Remove for ssh debugging
-    # permissions:
-    #   id-token: write
-    #   contents: read
-    # outputs:
-    #   wheel: ${{ steps.build-commit.outputs.wheel }}
-    # steps:
-    # - uses: actions/checkout@v4
-    #   with:
-    #     ref: ${{ matrix.commit }}
-    #   id: build-commit
-    #   with:
-    #     commit: ${{ matrix.commit }}
-    #     aws_role_arn: ${{ secrets.ACTIONS_AWS_ROLE_ARN }}
-
   run:
     needs: build
     runs-on: [self-hosted, linux, x64, ci-dev]
