@@ -29,6 +29,7 @@ jobs:
       id-token: write
       contents: read
     steps:
+    - run: echo ${{ needs.build.outputs.wheel }}
     - uses: actions/checkout@v4
       with:
         ref: ${{ matrix.commit }}
