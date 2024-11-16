@@ -2,6 +2,9 @@ name: Build a specific daft commit and store it in AWS S3
 description: Build a specific daft commit and store the output wheel in AWS S3
 
 inputs:
+  aws_role_arn:
+    description: The ARN of the AWS role to assume
+    required: true
   commit:
     description: The commit hash to build
     required: true
@@ -18,7 +21,7 @@ runs:
     uses: aws-actions/configure-aws-credentials@v4
     with:
       aws-region: us-west-2
-      role-to-assume: ${{ secrets.ACTIONS_AWS_ROLE_ARN }}
+      role-to-assume: ${{ inputs.aws_role_arn }}
       role-session-name: daft-performance-comparisons-build
   - name: Checkout commit ${{ inputs.commit }}
     uses: actions/checkout@v4
