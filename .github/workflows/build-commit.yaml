@@ -27,6 +27,8 @@ jobs:
     permissions:
       id-token: write
       contents: read
+    outputs:
+      wheel: ${{ steps.build_and_upload.outputs.wheel }}
     steps:
     - uses: aws-actions/configure-aws-credentials@v4
       with:

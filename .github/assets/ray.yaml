@@ -38,10 +38,6 @@ setup_commands:
 - sudo chmod 777 /tmp
 
 # Install dependencies
-- sudo apt install unzip
-- curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-- unzip awscliv2.zip
-- sudo ./aws/install
 - curl -LsSf https://astral.sh/uv/install.sh | sh
 - echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
 - source ~/.bashrc

@@ -51,7 +51,6 @@ jobs:
     - uses: lhotari/action-upterm@v1
 
     - run: |
-        # Dynamically update ray config file
         # Boot up ray cluster
         uv v
         source .venv/bin/activate
