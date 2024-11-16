@@ -18,7 +18,7 @@ jobs:
 
   run:
     needs: build
-    runs-on: [self-hosted, linux, x64, job-runner]
+    runs-on: [self-hosted, linux, x64, ci-dev]
     strategy:
       fail-fast: true
       matrix:
