@@ -14,7 +14,7 @@ on:
     outputs:
       wheel:
         description: The wheel file that was built
-        value: ${{ steps.upload_to_s3.outputs.wheel }}
+        value: ${{ jobs.upload_to_s3.outputs.wheel }}
 
 jobs:
   build-commit:
@@ -43,7 +43,6 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-cargo-deps-
     - name: Build wheel for commit ${{ inputs.commit }}
-      shell: bash
       run: |
         export CARGO_TARGET_DIR=~/target
         uv v
@@ -52,7 +51,6 @@ jobs:
         uv pip install maturin
         maturin build
     - name: Upload files to s3
-      shell: bash
       id: upload_to_s3
       run: |
         # There should only be one output wheel in this directory
