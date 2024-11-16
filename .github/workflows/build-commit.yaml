@@ -24,25 +24,22 @@ jobs:
       id-token: write
       contents: read
     steps:
-    - name: Assume AWS credentials
-      uses: aws-actions/configure-aws-credentials@v4
+    - uses: aws-actions/configure-aws-credentials@v4
       with:
         aws-region: us-west-2
         role-to-assume: ${{ secrets.aws_role_arn }}
         role-session-name: daft-performance-comparisons-build
-    - name: Checkout commit ${{ inputs.commit }}
-      uses: actions/checkout@v4
+    - uses: actions/checkout@v4
       with:
         ref: ${{ inputs.commit }}
     - uses: ./.github/actions/install
-    - name: Cache dependencies
-      uses: actions/cache@v3
+    - uses: actions/cache@v3
       with:
         path: ~/target/debug
         key: ${{ runner.os }}-cargo-deps-${{ hashFiles('**/Cargo.lock') }}
         restore-keys: |
           ${{ runner.os }}-cargo-deps-
-    - name: Build wheel for commit ${{ inputs.commit }}
+    - id: build_and_upload
       run: |
         export CARGO_TARGET_DIR=~/target
         uv v
@@ -50,9 +47,7 @@ jobs:
         uv pip install pip
         uv pip install maturin
         maturin build
-    - name: Upload files to s3
-      id: upload_to_s3
-      run: |
+
         # There should only be one output wheel in this directory
         for file in ~/target/wheels/*.whl; do
           aws s3 cp $file s3://github-actions-artifacts-bucket/builds/${{ github.sha }}/${{ inputs.commit }}/ --acl public-read --no-progress;

@@ -32,12 +32,10 @@ jobs:
       id-token: write
       contents: read
     steps:
-    - name: Checkout commit ${{ matrix.commit }}
-      uses: actions/checkout@v4
+    - uses: actions/checkout@v4
       with:
         ref: ${{ matrix.commit }}
-    - name: Assume AWS credentials
-      uses: aws-actions/configure-aws-credentials@v4
+    - uses: aws-actions/configure-aws-credentials@v4
       with:
         aws-region: us-west-2
     - uses: ./.github/actions/install
