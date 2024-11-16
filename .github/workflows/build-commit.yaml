@@ -18,7 +18,7 @@ on:
     outputs:
       wheel:
         description: The wheel file that was built
-        value: ${{ jobs.build_and_upload.outputs.wheel }}
+        value: ${{ jobs.build-commit.outputs.wheel }}
 
 jobs:
   build-commit:
@@ -43,8 +43,7 @@ jobs:
       with:
         path: ~/target/debug
         key: ${{ runner.os }}-cargo-deps-${{ hashFiles('**/Cargo.lock') }}
-        restore-keys: |
-          ${{ runner.os }}-cargo-deps-
+        restore-keys: ${{ runner.os }}-cargo-deps-
     - id: build_and_upload
       run: |
         # Build wheel
