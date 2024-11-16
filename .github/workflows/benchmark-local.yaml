@@ -1,7 +1,3 @@
-# cli command to run this from repo
-# given a run, get output (link?)
-# input variable to CLI to allow users to specify where to output their artefacts
-
 name: Run performance comparisons
 
 on:
@@ -22,7 +18,7 @@ jobs:
 
   run:
     needs: build
-    runs-on: [self-hosted, linux, x64, ci-dev]
+    runs-on: [self-hosted, linux, x64, job-runner]
     strategy:
       fail-fast: true
       matrix:
@@ -40,18 +36,18 @@ jobs:
       with:
         aws-region: us-west-2
     - uses: ./.github/actions/install
-    - name: Modify ray.yaml to contain runtime variables
-      run: |
+    - run: |
+        # Dynamically update ray config file
         sed -i 's|<<SHA>>|${{ github.sha }}|g' .github/assets/ray.yaml
         sed -i 's|<<COMMIT>>|${{ matrix.commit }}|g' .github/assets/ray.yaml
         sed -i 's|<<WHEEL>>|${{ needs.build.outputs.wheel }}|g' .github/assets/ray.yaml
-    - name: Write ssh-key to file
-      run: |
+
+        # Download private ssh key
         KEY=$(aws secretsmanager get-secret-value --secret-id ci-github-actions-ray-cluster-key-3 --query SecretString --output text)
         echo "$KEY" >> ~/.ssh/ci-github-actions-ray-cluster-key.pem
         chmod 600 ~/.ssh/ci-github-actions-ray-cluster-key.pem
-    - name: Spin up ray cluster
-      run: |
+
+        # Boot up ray cluster
         uv v
         source .venv/bin/activate
         uv pip install ray[default] boto3

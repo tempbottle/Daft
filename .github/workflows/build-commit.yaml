@@ -45,6 +45,7 @@ jobs:
           ${{ runner.os }}-cargo-deps-
     - id: build_and_upload
       run: |
+        # Build wheel
         export CARGO_TARGET_DIR=~/target
         uv v
         source .venv/bin/activate
@@ -52,7 +53,8 @@ jobs:
         uv pip install maturin
         maturin build
 
-        # There should only be one output wheel in this directory
+        # Upload wheel
+        # (there should only be one output wheel in this directory)
         for file in ~/target/wheels/*.whl; do
           aws s3 cp $file s3://github-actions-artifacts-bucket/builds/${{ github.sha }}/${{ inputs.commit }}/ --acl public-read --no-progress;
           file_basename=$(basename $file)

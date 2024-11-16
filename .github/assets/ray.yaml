@@ -53,8 +53,7 @@ setup_commands:
 - uv pip install pip ray[default] py-spy
 # GitHub Actions workflow will replace the `<<SHA>>`, `<<COMMIT>>`, and `<<WHEEL>>` placeholders
 # with the actual values as determined dynamically during runtime of the actual workflow.
-# - uv pip install https://github-actions-artifacts-bucket.s3.amazonaws.com/builds/<<SHA>>/<<COMMIT>>/<<WHEEL>>
-- uv pip install getdaft
+- uv pip install https://github-actions-artifacts-bucket.s3.amazonaws.com/builds/<<SHA>>/<<COMMIT>>/<<WHEEL>>
 
 # Download benchmarking fixtures
 - |
