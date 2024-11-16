@@ -27,8 +27,12 @@ jobs:
     permissions:
       id-token: write
       contents: read
+    # outputs:
+      # wheel: ${{ steps.build_and_upload.outputs.wheel }}
+
     outputs:
       wheel: ${{ steps.build_and_upload.outputs.wheel }}
+
     steps:
     - uses: aws-actions/configure-aws-credentials@v4
       with:
@@ -60,5 +64,6 @@ jobs:
         for file in ~/target/wheels/*.whl; do
           aws s3 cp $file s3://github-actions-artifacts-bucket/builds/${{ github.sha }}/${{ inputs.commit }}/ --acl public-read --no-progress;
           file_basename=$(basename $file)
+          echo $file_basename
           echo "wheel=$file_basename" >> "$GITHUB_OUTPUT"
         done
