@@ -24,7 +24,7 @@ jobs:
       matrix:
         commit:
         - ${{ github.event.inputs.c1 }}
-    timeout-minutes: 15 # Remove for ssh debugging
+    # timeout-minutes: 15 # Remove for ssh debugging
     permissions:
       id-token: write
       contents: read
