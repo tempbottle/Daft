@@ -26,6 +26,10 @@ jobs:
     outputs:
       wheel: ${{ steps.upload_to_s3.outputs.wheel }}
     steps:
+    - name: Checkout commit ${{ matrix.commit }}
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ matrix.commit }}
     - uses: ./.github/actions/build-commit
       with:
         commit: ${{ matrix.commit }}
@@ -36,10 +40,6 @@ jobs:
       #     aws-region: us-west-2
       #     role-to-assume: ${{ secrets.ACTIONS_AWS_ROLE_ARN }}
       #     role-session-name: daft-performance-comparisons-build
-      # - name: Checkout commit ${{ matrix.commit }}
-      #   uses: actions/checkout@v4
-      #   with:
-      #     ref: ${{ matrix.commit }}
       # - uses: ./.github/actions/install
       # - name: Install additional dependencies
       #   run: |
