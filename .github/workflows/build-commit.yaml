@@ -1,6 +1,7 @@
 name: Build a specific daft commit and store it in AWS S3
 
 on:
+  pull_request:
   workflow_call:
     secrets:
       aws_role_arn:
