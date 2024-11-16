@@ -62,6 +62,4 @@ jobs:
           --output_csv output.csv \
           --ray_job_dashboard_url http://localhost:8265 \
           --skip_warmup
-
-        ray job submit --working-dir .github/working_dir --address http://localhost:8265 -- python test.py
         ray down .github/assets/ray.yaml -y
