@@ -1,0 +1,98 @@
+name: Build a specific daft commit and store it in AWS S3
+
+on:
+  workflow_call:
+    inputs:
+      aws_role_arn:
+        type: string
+        description: The ARN of the AWS role to assume
+        required: true
+      commit:
+        type: string
+        description: The commit hash to build
+        required: true
+    outputs:
+      wheel:
+        description: The wheel file that was built
+
+jobs:
+  build-commit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15 # Remove for ssh debugging
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+    - name: Assume AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-region: us-west-2
+        role-to-assume: ${{ inputs.aws_role_arn }}
+        role-session-name: daft-performance-comparisons-build
+    - name: Checkout commit ${{ inputs.commit }}
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ inputs.commit }}
+    - uses: ./.github/actions/install
+    - name: Cache dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/target/debug
+        key: ${{ runner.os }}-cargo-deps-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-cargo-deps-
+    - name: Build wheel for commit ${{ inputs.commit }}
+      shell: bash
+      run: |
+        export CARGO_TARGET_DIR=~/target
+        uv v
+        source .venv/bin/activate
+        uv pip install pip
+        uv pip install maturin
+        maturin build
+    - name: Upload files to s3
+      shell: bash
+      id: upload_to_s3
+      run: |
+        # There should only be one output wheel in this directory
+        for file in ~/target/wheels/*.whl; do
+          aws s3 cp $file s3://github-actions-artifacts-bucket/builds/${{ github.sha }}/${{ inputs.commit }}/ --acl public-read --no-progress;
+          file_basename=$(basename $file)
+          echo "wheel=$file_basename" >> "$GITHUB_OUTPUT"
+        done
+
+    # steps:
+    # - name: Install rust
+    #   shell: bash
+    #   run: |
+    #     curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+    #     CARGO_BIN="$HOME/.cargo/bin"
+    #     echo 'export PATH="$CARGO_BIN:$PATH"' >> $HOME/.bashrc
+    #     echo "$CARGO_BIN" >> $GITHUB_PATH
+
+    # - name: Install uv
+    #   shell: bash
+    #   run: |
+    #     curl -LsSf https://astral.sh/uv/install.sh | sh
+    #     UV_BIN="$HOME/.local/bin"
+    #     echo 'export PATH="$UV_BIN:$PATH"' >> $HOME/.bashrc
+    #     echo "$UV_BIN" >> $GITHUB_PATH
+
+    # - name: Source .bashrc
+    #   shell: bash
+    #   run: |
+    #     source $HOME/.bashrc
+
+    # - name: Install python (version 3.9)
+    #   shell: bash
+    #   run: |
+    #     uv python install 3.9
+    #     uv python pin 3.9
+
+# outputs:
+#   wheel:
+#     description: The wheel file that was built
+#     value: ${{ steps.upload_to_s3.outputs.wheel }}
+
+# runs:
+#   using: composite
