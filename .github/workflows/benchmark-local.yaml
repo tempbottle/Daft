@@ -26,45 +26,49 @@ jobs:
     outputs:
       wheel: ${{ steps.upload_to_s3.outputs.wheel }}
     steps:
-    - name: Assume AWS credentials
-      uses: aws-actions/configure-aws-credentials@v4
+    - uses: ./.github/actions/build-commit
       with:
-        aws-region: us-west-2
-        role-to-assume: ${{ secrets.ACTIONS_AWS_ROLE_ARN }}
-        role-session-name: daft-performance-comparisons-build
-    - name: Checkout commit ${{ matrix.commit }}
-      uses: actions/checkout@v4
-      with:
-        ref: ${{ matrix.commit }}
-    - uses: ./.github/actions/install
-    - name: Install additional dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install gcc g++ pkg-config libssl-dev make -y
-    - name: Cache dependencies
-      uses: actions/cache@v3
-      with:
-        path: ~/target/debug
-        key: ${{ runner.os }}-cargo-deps-${{ hashFiles('**/Cargo.lock') }}
-        restore-keys: |
-          ${{ runner.os }}-cargo-deps-
-    - name: Build wheel for commit ${{ matrix.commit }}
-      run: |
-        export CARGO_TARGET_DIR=~/target
-        uv v
-        source .venv/bin/activate
-        uv pip install pip
-        uv pip install maturin
-        maturin build
-    - name: Upload files to s3
-      id: upload_to_s3
-      run: |
-        # There should only be one output wheel in this directory
-        for file in ~/target/wheels/*.whl; do
-          aws s3 cp $file s3://github-actions-artifacts-bucket/builds/${{ github.sha }}/${{ matrix.commit }}/ --acl public-read --no-progress;
-          file_basename=$(basename $file)
-          echo "wheel=$file_basename" >> "$GITHUB_OUTPUT"
-        done
+        commit: ${{ matrix.commit }}
+
+      # - name: Assume AWS credentials
+      #   uses: aws-actions/configure-aws-credentials@v4
+      #   with:
+      #     aws-region: us-west-2
+      #     role-to-assume: ${{ secrets.ACTIONS_AWS_ROLE_ARN }}
+      #     role-session-name: daft-performance-comparisons-build
+      # - name: Checkout commit ${{ matrix.commit }}
+      #   uses: actions/checkout@v4
+      #   with:
+      #     ref: ${{ matrix.commit }}
+      # - uses: ./.github/actions/install
+      # - name: Install additional dependencies
+      #   run: |
+      #     sudo apt-get update
+      #     sudo apt-get install gcc g++ pkg-config libssl-dev make -y
+      # - name: Cache dependencies
+      #   uses: actions/cache@v3
+      #   with:
+      #     path: ~/target/debug
+      #     key: ${{ runner.os }}-cargo-deps-${{ hashFiles('**/Cargo.lock') }}
+      #     restore-keys: |
+      #       ${{ runner.os }}-cargo-deps-
+      # - name: Build wheel for commit ${{ matrix.commit }}
+      #   run: |
+      #     export CARGO_TARGET_DIR=~/target
+      #     uv v
+      #     source .venv/bin/activate
+      #     uv pip install pip
+      #     uv pip install maturin
+      #     maturin build
+      # - name: Upload files to s3
+      #   id: upload_to_s3
+      #   run: |
+      #     # There should only be one output wheel in this directory
+      #     for file in ~/target/wheels/*.whl; do
+      #       aws s3 cp $file s3://github-actions-artifacts-bucket/builds/${{ github.sha }}/${{ matrix.commit }}/ --acl public-read --no-progress;
+      #       file_basename=$(basename $file)
+      #       echo "wheel=$file_basename" >> "$GITHUB_OUTPUT"
+      #     done
 
   run:
     needs: build

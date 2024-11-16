@@ -17,8 +17,7 @@ available_node_types:
     resources: {"CPU": 0}
     node_config:
       KeyName: ci-github-actions-ray-cluster-key
-      InstanceType: i3.2xlarge
-      ImageId: ami-0b8c6b923777519db
+      InstanceType: m6id.2xlarge
       IamInstanceProfile:
         Name: ray-autoscaler-v1
 
@@ -28,13 +27,21 @@ available_node_types:
     resources: {}
     node_config:
       KeyName: ci-github-actions-ray-cluster-key
-      InstanceType: i3.2xlarge
-      ImageId: ami-0b8c6b923777519db
+      InstanceType: m6id.2xlarge
       IamInstanceProfile:
         Name: ray-autoscaler-v1
 
 setup_commands:
+# Mount drive
+- sudo mkfs.ext4 /dev/nvme1n1
+- sudo mount -t ext4 /dev/nvme1n1 /tmp
+- sudo chmod 777 /tmp
+
 # Install dependencies
+- sudo apt install unzip
+- curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+- unzip awscliv2.zip
+- sudo ./aws/install
 - curl -LsSf https://astral.sh/uv/install.sh | sh
 - echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
 - source ~/.bashrc
@@ -44,6 +51,13 @@ setup_commands:
 - echo "source $HOME/.venv/bin/activate" >> $HOME/.bashrc
 - source .venv/bin/activate
 - uv pip install pip ray[default] py-spy
-    # GitHub Actions workflow will replace the `<<SHA>>`, `<<COMMIT>>`, and `<<WHEEL>>` placeholders
-    # with the actual values as determined dynamically during runtime of the actual workflow.
-- uv pip install https://github-actions-artifacts-bucket.s3.amazonaws.com/builds/<<SHA>>/<<COMMIT>>/<<WHEEL>>
+# GitHub Actions workflow will replace the `<<SHA>>`, `<<COMMIT>>`, and `<<WHEEL>>` placeholders
+# with the actual values as determined dynamically during runtime of the actual workflow.
+# - uv pip install https://github-actions-artifacts-bucket.s3.amazonaws.com/builds/<<SHA>>/<<COMMIT>>/<<WHEEL>>
+- uv pip install getdaft
+
+# Download benchmarking fixtures
+- |
+  aws s3 sync \
+  s3://eventual-dev-benchmarking-fixtures/uncompressed/tpch-dbgen/2_0/2/parquet/ \
+  /tmp/data/2_0/2/parquet/
