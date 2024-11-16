@@ -11,6 +11,10 @@ on:
         type: string
         description: The commit hash to build
         required: true
+      machine_type:
+        type: string
+        description: The machine type to use for the build
+        required: true
     outputs:
       wheel:
         description: The wheel file that was built
@@ -18,7 +22,7 @@ on:
 
 jobs:
   build-commit:
-    runs-on: buildjet-8vcpu-ubuntu-2204
+    runs-on: ${{ inputs.machine_type }}
     timeout-minutes: 15 # Remove for ssh debugging
     permissions:
       id-token: write
